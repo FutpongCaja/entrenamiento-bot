@@ -22,19 +22,8 @@ app.add_middleware(
 )
 
 def get_best_model(system_instruction=None):
-    try:
-        model_name = 'gemini-1.5-flash'
-        # Verificar si está disponible, si no usar el primero que soporte content generation
-        available_models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
-        if any('gemini-1.5-flash' in name for name in available_models):
-            model_name = [name for name in available_models if 'gemini-1.5-flash' in name][0]
-        elif available_models:
-            model_name = available_models[0]
-        
-        return genai.GenerativeModel(model_name, system_instruction=system_instruction)
-    except Exception as e:
-        print(f"Error al obtener modelo: {e}")
-        return genai.GenerativeModel('gemini-pro', system_instruction=system_instruction)
+    # Usamos directamente gemini-1.5-flash que es el estándar actual y más rápido
+    return genai.GenerativeModel('gemini-1.5-flash', system_instruction=system_instruction)
 
 SYSTEM_INSTRUCTION = """Eres el CLON DIGITAL del PF Hernán Álvarez. 
 TU OBJETIVO: Ser extremadamente directo, claro y conciso. Hablá como un PF argentino (usá voseo: "che", "hacé", "tenés", "vas a").
