@@ -21,9 +21,23 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+global_model_error = None
+
 def get_best_model(system_instruction=None):
-    # Usamos directamente gemini-1.5-flash que es el estándar actual y más rápido
-    return genai.GenerativeModel('gemini-1.5-flash', system_instruction=system_instruction)
+    global global_model_error
+    try:
+        model_name = 'gemini-1.5-flash'
+        available_models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
+        if any('gemini-1.5-flash' in name for name in available_models):
+            model_name = [name for name in available_models if 'gemini-1.5-flash' in name][0]
+        elif available_models:
+            model_name = available_models[-1] # Usually the latest is at the end
+        
+        return genai.GenerativeModel(model_name, system_instruction=system_instruction)
+    except Exception as e:
+        global_model_error = str(e)
+        # Retornamos un modelo con un nombre falso para que falle y el frontend muestre el global_model_error
+        return genai.GenerativeModel('gemini-dummy-error', system_instruction=system_instruction)
 
 SYSTEM_INSTRUCTION = """Eres el CLON DIGITAL del PF Hernán Álvarez. 
 TU OBJETIVO: Ser extremadamente directo, claro y conciso. Hablá como un PF argentino (usá voseo: "che", "hacé", "tenés", "vas a").
@@ -107,6 +121,9 @@ async def chat(request: ChatRequest):
     # 2. El system_instruction ya está en el modelo.
     
     try:
+        if global_model_error:
+            return {"response": f"Che, no se pudieron cargar los modelos de Google. Error interno: {global_model_error}"}
+
         # Enviamos el mensaje con el contexto local embebido
         prompt = f"CONTEXTO TÉCNICO LOCAL: {context_info}\n\nMENSAJE DEL ALUMNO: {request.message}"
         response = chat_session.send_message(prompt)
