@@ -21,23 +21,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-global_model_error = None
-
-def get_best_model(system_instruction=None):
-    global global_model_error
-    try:
-        model_name = 'gemini-1.5-flash'
-        available_models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
-        if any('gemini-1.5-flash' in name for name in available_models):
-            model_name = [name for name in available_models if 'gemini-1.5-flash' in name][0]
-        elif available_models:
-            model_name = available_models[-1] # Usually the latest is at the end
-        
-        return genai.GenerativeModel(model_name, system_instruction=system_instruction)
-    except Exception as e:
-        global_model_error = str(e)
-        # Retornamos un modelo con un nombre falso para que falle y el frontend muestre el global_model_error
-        return genai.GenerativeModel('gemini-dummy-error', system_instruction=system_instruction)
+MODEL_NAME = 'gemini-1.5-flash'
 
 SYSTEM_INSTRUCTION = """Eres el CLON DIGITAL del PF Hernán Álvarez. 
 TU OBJETIVO: Ser extremadamente directo, claro y conciso. Hablá como un PF argentino (usá voseo: "che", "hacé", "tenés", "vas a").
@@ -61,9 +45,6 @@ LÓGICA TÉCNICA:
 api_key = os.getenv("GEMINI_API_KEY")
 if api_key and api_key != "tu_api_key_aqui":
     genai.configure(api_key=api_key)
-    model = get_best_model(system_instruction=SYSTEM_INSTRUCTION)
-else:
-    model = None
 
 class ChatRequest(BaseModel):
     message: str
@@ -94,43 +75,39 @@ def get_local_knowledge():
     except Exception as e:
         return f"Error leyendo conocimiento local: {str(e)}"
 
-# Almacén de sesiones (en memoria, para esta versión personal)
-chat_sessions = {}
+# Historial de conversación en memoria
+conversation_history = []
 
 @app.post("/reset")
 async def reset_chat():
-    if "global" in chat_sessions:
-        chat_sessions["global"] = model.start_chat(history=[])
+    global conversation_history
+    conversation_history = []
     return {"status": "Memoria reseteada"}
 
 @app.post("/chat")
 async def chat(request: ChatRequest):
+    global conversation_history
     if not api_key or api_key == "tu_api_key_aqui":
         return {"error": "Por favor, configura tu GEMINI_API_KEY en el archivo .env"}
 
-    # Obtener o crear sesión de chat
-    # Para simplificar, usamos una sola sesión global en esta versión
-    if "global" not in chat_sessions:
-        chat_sessions["global"] = model.start_chat(history=[])
-    
-    chat_session = chat_sessions["global"]
-
     # 1. Obtener información base del conocimiento local
     context_info = get_local_knowledge()
-    
-    # 2. El system_instruction ya está en el modelo.
-    
-    try:
-        if global_model_error:
-            return {"response": f"Che, no se pudieron cargar los modelos de Google. Error interno: {global_model_error}"}
 
-        # Enviamos el mensaje con el contexto local embebido
-        prompt = f"CONTEXTO TÉCNICO LOCAL: {context_info}\n\nMENSAJE DEL ALUMNO: {request.message}"
-        response = chat_session.send_message(prompt)
+    # 2. Construir el prompt completo con historial
+    conversation_history.append({"role": "user", "parts": [f"CONTEXTO TÉCNICO LOCAL: {context_info}\n\nMENSAJE DEL ALUMNO: {request.message}"]})
+
+    try:
+        model = genai.GenerativeModel(MODEL_NAME, system_instruction=SYSTEM_INSTRUCTION)
+        response = model.generate_content(conversation_history)
         
-        # Limpiar la respuesta
-        clean_response = response.text.strip()
-        return {"response": clean_response}
+        assistant_reply = response.text.strip()
+        # Guardar respuesta del asistente en el historial
+        conversation_history.append({"role": "model", "parts": [assistant_reply]})
+        # Limitar historial para no sobrepasar el contexto (últimas 20 entradas)
+        if len(conversation_history) > 20:
+            conversation_history = conversation_history[-20:]
+        
+        return {"response": assistant_reply}
     except Exception as e:
         import traceback
         error_details = traceback.format_exc()
