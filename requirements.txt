@@ -1,6 +1,6 @@
 fastapi
 uvicorn
 python-dotenv
-google-generativeai
+google-generativeai>=0.8.0
 pydantic
 python-multipart

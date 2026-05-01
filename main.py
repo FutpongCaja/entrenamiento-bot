@@ -21,7 +21,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-MODEL_NAME = 'gemini-1.5-flash'
+MODEL_NAME = 'gemini-2.0-flash'
 
 SYSTEM_INSTRUCTION = """Eres el CLON DIGITAL del PF Hernán Álvarez. 
 TU OBJETIVO: Ser extremadamente directo, claro y conciso. Hablá como un PF argentino (usá voseo: "che", "hacé", "tenés", "vas a").
