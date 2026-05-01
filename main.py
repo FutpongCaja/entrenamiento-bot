@@ -4,7 +4,8 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from dotenv import load_dotenv
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 
 # Cargar variables de entorno (.env)
 load_dotenv()
@@ -21,7 +22,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-MODEL_NAME = 'gemini-2.0-flash'
+MODEL_NAME = 'gemini-2.5-flash-preview-04-17'
 
 SYSTEM_INSTRUCTION = """Eres el CLON DIGITAL del PF Hernán Álvarez. 
 TU OBJETIVO: Ser extremadamente directo, claro y conciso. Hablá como un PF argentino (usá voseo: "che", "hacé", "tenés", "vas a").
@@ -43,8 +44,7 @@ LÓGICA TÉCNICA:
 3. No repetir ejercicios en la misma sesión."""
 
 api_key = os.getenv("GEMINI_API_KEY")
-if api_key and api_key != "tu_api_key_aqui":
-    genai.configure(api_key=api_key)
+client = genai.Client(api_key=api_key) if (api_key and api_key != "tu_api_key_aqui") else None
 
 class ChatRequest(BaseModel):
     message: str
@@ -94,15 +94,18 @@ async def chat(request: ChatRequest):
     context_info = get_local_knowledge()
 
     # 2. Construir el prompt completo con historial
-    conversation_history.append({"role": "user", "parts": [f"CONTEXTO TÉCNICO LOCAL: {context_info}\n\nMENSAJE DEL ALUMNO: {request.message}"]})
+    conversation_history.append(types.Content(role="user", parts=[types.Part(text=f"CONTEXTO TÉCNICO LOCAL: {context_info}\n\nMENSAJE DEL ALUMNO: {request.message}")]))
 
     try:
-        model = genai.GenerativeModel(MODEL_NAME, system_instruction=SYSTEM_INSTRUCTION)
-        response = model.generate_content(conversation_history)
+        response = client.models.generate_content(
+            model=MODEL_NAME,
+            contents=conversation_history,
+            config=types.GenerateContentConfig(system_instruction=SYSTEM_INSTRUCTION)
+        )
         
         assistant_reply = response.text.strip()
         # Guardar respuesta del asistente en el historial
-        conversation_history.append({"role": "model", "parts": [assistant_reply]})
+        conversation_history.append(types.Content(role="model", parts=[types.Part(text=assistant_reply)]))
         # Limitar historial para no sobrepasar el contexto (últimas 20 entradas)
         if len(conversation_history) > 20:
             conversation_history = conversation_history[-20:]
