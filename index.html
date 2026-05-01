@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#00f2fe">
+    <title>pf.hernanalvarez | Entrenamiento Total</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-container">
+        <div class="chat-header">
+            <div class="status-group">
+                <h1>ENTRENAMIENTO TOTAL</h1>
+                <p>Desarrollado por pf.hernanalvarez</p>
+            </div>
+            <div class="header-actions">
+                <button id="reset-btn" title="Nuevo Chat">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"></path><path d="M21 3v5h-5"></path><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"></path><path d="M3 21v-5h5"></path></svg>
+                </button>
+                <div class="status">
+                    <span class="status-dot"></span>
+                    <span class="status-text">Conectado</span>
+                </div>
+            </div>
+        </div>
+
+        <main class="chat-area" id="chat-area">
+            <div class="message ai">
+                ¡Hola! Soy el asistente de pf.hernanalvarez, puedo responder tu duda muy fácil. Decime en qué te puedo ayudar.
+            </div>
+        </main>
+
+        <div class="typing" id="typing">Gemini está pensando...</div>
+
+        <form class="input-area" id="chat-form">
+            <input type="text" id="user-input" placeholder="Pregunta sobre protocolos, tests o fisiología..." autocomplete="off">
+            <button type="submit">Enviar</button>
+        </form>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
