@@ -22,7 +22,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-MODEL_NAME = 'gemini-2.0-flash-lite'
+MODEL_NAME = 'gemini-2.5-flash'
 
 SYSTEM_INSTRUCTION = """Eres el CLON DIGITAL del PF Hernán Álvarez. 
 TU OBJETIVO: Ser extremadamente directo, claro y conciso. Hablá como un PF argentino (usá voseo: "che", "hacé", "tenés", "vas a").
@@ -44,10 +44,7 @@ LÓGICA TÉCNICA:
 3. No repetir ejercicios en la misma sesión."""
 
 api_key = os.getenv("GEMINI_API_KEY")
-client = genai.Client(
-    api_key=api_key,
-    http_options=types.HttpOptions(api_version='v1')
-) if (api_key and api_key != "tu_api_key_aqui") else None
+client = genai.Client(api_key=api_key) if (api_key and api_key != "tu_api_key_aqui") else None
 
 class ChatRequest(BaseModel):
     message: str
