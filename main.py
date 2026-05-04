@@ -44,7 +44,10 @@ LÓGICA TÉCNICA:
 3. No repetir ejercicios en la misma sesión."""
 
 api_key = os.getenv("GEMINI_API_KEY")
-client = genai.Client(api_key=api_key) if (api_key and api_key != "tu_api_key_aqui") else None
+client = genai.Client(
+    api_key=api_key,
+    http_options=types.HttpOptions(api_version='v1')
+) if (api_key and api_key != "tu_api_key_aqui") else None
 
 class ChatRequest(BaseModel):
     message: str
@@ -77,6 +80,15 @@ def get_local_knowledge():
 
 # Historial de conversación en memoria
 conversation_history = []
+
+@app.get("/models")
+async def list_models():
+    """Endpoint de diagnóstico: lista los modelos disponibles con esta API key."""
+    try:
+        models = [m.name for m in client.models.list()]
+        return {"modelos_disponibles": models, "modelo_actual": MODEL_NAME}
+    except Exception as e:
+        return {"error": str(e)}
 
 @app.post("/reset")
 async def reset_chat():
